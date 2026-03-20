@@ -4,7 +4,7 @@
 
 ---
 
-## 🇬🇧 English
+## English
 
 A fast, offline, and real-time text encoder and decoder. Convert instantly between Text, Hex, Binary, Base64, Unicode, and many other data formats directly in your browser.
 
@@ -16,7 +16,7 @@ A fast, offline, and real-time text encoder and decoder. Convert instantly betwe
 
 ---
 
-## 🇪🇸 Español
+## Español
 
 Un codificador y decodificador de texto rápido, en tiempo real y que funciona sin conexión. Convierte al instante entre Texto, Hexadecimal, Binario, Base64, Unicode y muchos formatos más, directamente en tu navegador.
 
