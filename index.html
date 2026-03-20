@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversor Unicode Definitivo</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --surface: #1e293b;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-radius: 12px;
+            --transition: all 0.2s ease;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 800px;
+            background-color: var(--surface);
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.03);
+            padding: 20px 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .toggle-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .toggle-label input[type="checkbox"] {
+            accent-color: var(--primary);
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        select, .btn-clear {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: var(--transition);
+            outline: none;
+        }
+
+        select:hover, .btn-clear:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        select option {
+            background-color: var(--surface);
+            color: var(--text-main);
+        }
+
+        .converter-body {
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: stretch;
+            background-color: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .input-group:focus-within {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        .label {
+            background-color: rgba(255, 255, 255, 0.03);
+            color: var(--text-muted);
+            padding: 15px;
+            width: 110px;
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            flex-shrink: 0;
+            word-break: break-word;
+        }
+
+        textarea {
+            flex-grow: 1;
+            background-color: transparent;
+            border: none;
+            color: var(--text-main);
+            padding: 12px 16px;
+            font-size: 0.95rem;
+            outline: none;
+            font-family: "JetBrains Mono", "Fira Code", monospace;
+            resize: none;
+            min-height: 24px;
+            line-height: 1.5;
+            overflow-x: auto;
+        }
+
+        textarea.limit {
+            max-height: 4.8em;
+            overflow-y: auto;
+        }
+
+        textarea.wrap {
+            white-space: pre-wrap;
+            overflow-wrap: break-word;
+        }
+
+        textarea.nowrap {
+            white-space: pre;
+        }
+
+        textarea::-webkit-scrollbar { height: 8px; width: 8px; }
+        textarea::-webkit-scrollbar-track { background: transparent; }
+        textarea::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 4px; }
+        textarea::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.5); }
+
+        .copy-btn {
+            background-color: transparent;
+            border: none;
+            border-left: 1px solid rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+            padding: 0 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+
+        .copy-btn:hover {
+            color: var(--primary);
+            background-color: rgba(59, 130, 246, 0.05);
+        }
+
+        .copy-btn svg { width: 20px; height: 20px; fill: currentColor; }
+        .error-state { border-color: #ef4444 !important; box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <div class="header">
+            <h1 id="ui-title">Conversor Unicode Definitivo</h1>
+            <div class="header-controls">
+                <label class="toggle-label">
+                    <input type="checkbox" id="chk-limit" checked onchange="toggleClasses()">
+                    <span id="ui-limit">Limitar líneas</span>
+                </label>
+                <label class="toggle-label">
+                    <input type="checkbox" id="chk-wrap" checked onchange="toggleClasses()">
+                    <span id="ui-wrap">Saltos de línea</span>
+                </label>
+                <select id="lang-select" onchange="changeLanguage()">
+                    <option value="es">ES</option>
+                    <option value="en">EN</option>
+                </select>
+                <button class="btn-clear" id="ui-clear" onclick="resetFields()">Limpiar</button>
+            </div>
+        </div>
+
+        <div class="converter-body" id="dynamic-inputs"></div>
+    </div>
+
+    <script>
+        const formatOrder = [
+            'text', 'hex', 'dec', 'bin', 'b64', 'url', 'html', 
+            'uni', 'oct', 'r13', 'b32', 'b58', 'morse', 'puny'
+        ];
+
+        const i18n = {
+            es: {
+                title: "Conversor Unicode Definitivo", clear: "Limpiar", wrap: "Saltos de línea", limit: "Limitar líneas",
+                lbl: {
+                    text: "TEXTO", hex: "HEX", dec: "DECIMAL", bin: "BINARIO", b64: "BASE64",
+                    url: "URL ENCODE", html: "HTML ENTITIES", uni: "UNICODE", oct: "OCTAL",
+                    r13: "ROT13", b32: "BASE32", b58: "BASE58", morse: "MORSE", puny: "PUNYCODE"
+                }
+            },
+            en: {
+                title: "Ultimate Unicode Converter", clear: "Clear", wrap: "Line breaks", limit: "Limit lines",
+                lbl: {
+                    text: "TEXT", hex: "HEX", dec: "DECIMAL", bin: "BINARY", b64: "BASE64",
+                    url: "URL ENCODE", html: "HTML ENTITIES", uni: "UNICODE", oct: "OCTAL",
+                    r13: "ROT13", b32: "BASE32", b58: "BASE58", morse: "MORSE", puny: "PUNYCODE"
+                }
+            }
+        };
+
+        let currentLang = 'en';
+        const els = {};
+        const groups = {};
+
+        function renderInputs() {
+            const container = document.getElementById('dynamic-inputs');
+            formatOrder.forEach(id => {
+                const group = document.createElement('div');
+                group.className = 'input-group';
+                group.id = `group-${id}`;
+                
+                group.innerHTML = `
+                    <div class="label" id="lbl-${id}"></div>
+                    <textarea id="val-${id}" oninput="updateFrom('${id}')" rows="1" class="wrap limit"></textarea>
+                    <button class="copy-btn" onclick="copyToClipboard('val-${id}')">
+                        <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                    </button>
+                `;
+                container.appendChild(group);
+                els[id] = document.getElementById(`val-${id}`);
+                groups[id] = document.getElementById(`group-${id}`);
+            });
+        }
+
+        function initLanguage() {
+            const userLang = navigator.language || navigator.userLanguage;
+            currentLang = userLang.toLowerCase().startsWith('es') ? 'es' : 'en';
+            document.getElementById('lang-select').value = currentLang;
+            applyTranslations();
+        }
+
+        function changeLanguage() {
+            currentLang = document.getElementById('lang-select').value;
+            applyTranslations();
+            document.title = i18n[currentLang].title;
+        }
+
+        function applyTranslations() {
+            const t = i18n[currentLang];
+            document.getElementById('ui-title').innerText = t.title;
+            document.getElementById('ui-clear').innerText = t.clear;
+            document.getElementById('ui-wrap').innerText = t.wrap;
+            document.getElementById('ui-limit').innerText = t.limit;
+            for (const key in t.lbl) {
+                if(document.getElementById('lbl-' + key)) {
+                    document.getElementById('lbl-' + key).innerText = t.lbl[key];
+                }
+            }
+        }
+
+        function toggleClasses() {
+            const isWrap = document.getElementById('chk-wrap').checked;
+            const isLimit = document.getElementById('chk-limit').checked;
+            
+            Object.values(els).forEach(el => {
+                el.classList.toggle('wrap', isWrap);
+                el.classList.toggle('nowrap', !isWrap);
+                el.classList.toggle('limit', isLimit);
+                autoResize(el);
+            });
+        }
+
+        function autoResize(el) {
+            el.style.height = 'auto';
+            el.style.height = el.scrollHeight + 'px';
+        }
+
+        const base32Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+        function encodeBase32(str) {
+            let bytes = new TextEncoder().encode(str);
+            let result = "", i = 0, bits = 0, value = 0;
+            while (i < bytes.length) {
+                value = (value << 8) | bytes[i++]; bits += 8;
+                while (bits >= 5) { result += base32Chars[(value >>> (bits - 5)) & 31]; bits -= 5; }
+            }
+            if (bits > 0) result += base32Chars[(value << (5 - bits)) & 31];
+            while (result.length % 8 !== 0) result += "=";
+            return result;
+        }
+
+        function decodeBase32(str) {
+            str = str.replace(/=+$/, "").toUpperCase();
+            let bits = 0, value = 0, bytes = [];
+            for (let i = 0; i < str.length; i++) {
+                let idx = base32Chars.indexOf(str[i]);
+                if (idx === -1) throw new Error();
+                value = (value << 5) | idx; bits += 5;
+                if (bits >= 8) { bytes.push((value >>> (bits - 8)) & 255); bits -= 8; }
+            }
+            return new TextDecoder().decode(new Uint8Array(bytes));
+        }
+
+        const b58Chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+        function encodeBase58(str) {
+            let bytes = new TextEncoder().encode(str);
+            let digits = [0];
+            for (let i = 0; i < bytes.length; i++) {
+                let carry = bytes[i];
+                for (let j = 0; j < digits.length; j++) {
+                    carry += digits[j] << 8;
+                    digits[j] = carry % 58;
+                    carry = Math.floor(carry / 58);
+                }
+                while (carry > 0) { digits.push(carry % 58); carry = Math.floor(carry / 58); }
+            }
+            let res = "";
+            for (let i = 0; bytes[i] === 0 && i < bytes.length - 1; i++) res += "1";
+            for (let i = digits.length - 1; i >= 0; i--) res += b58Chars[digits[i]];
+            return res;
+        }
+
+        function decodeBase58(str) {
+            if(!str) return "";
+            let bytes = [0];
+            for (let i = 0; i < str.length; i++) {
+                let c = b58Chars.indexOf(str[i]);
+                if (c < 0) throw new Error();
+                let carry = c;
+                for (let j = 0; j < bytes.length; j++) {
+                    carry += bytes[j] * 58;
+                    bytes[j] = carry & 0xff;
+                    carry >>= 8;
+                }
+                while (carry > 0) { bytes.push(carry & 0xff); carry >>= 8; }
+            }
+            for (let i = 0; str[i] === "1" && i < str.length - 1; i++) bytes.push(0);
+            return new TextDecoder().decode(new Uint8Array(bytes.reverse()));
+        }
+
+        const morseMap = {
+            'A':'.-','B':'-...','C':'-.-.','D':'-..','E':'.','F':'..-.','G':'--.','H':'....','I':'..','J':'.---',
+            'K':'-.-','L':'.-..','M':'--','N':'-.','O':'---','P':'.--.','Q':'--.-','R':'.-.','S':'...','T':'-',
+            'U':'..-','V':'...-','W':'.--','X':'-..-','Y':'-.--','Z':'--..','0':'-----','1':'.----','2':'..---',
+            '3':'...--','4':'....-','5':'.....','6':'-....','7':'--...','8':'---..','9':'----.',' ':'/'
+        };
+        const revMorseMap = Object.fromEntries(Object.entries(morseMap).map(([k, v]) => [v, k]));
+
+        function decodeMorse(str) {
+            return str.split(' ').map(c => revMorseMap[c] || c).join('').replace(/\//g, ' ');
+        }
+
+        function rot13(str) {
+            return str.replace(/[a-zA-Z]/g, c => String.fromCharCode((c <= "Z" ? 90 : 122) >= (c = c.charCodeAt(0) + 13) ? c : c - 26));
+        }
+
+        function encodeHtml(str) { return str.replace(/[\u00A0-\u9999<>\&"']/g, i => '&#'+i.charCodeAt(0)+';'); }
+        function decodeHtml(str) { 
+            let txt = document.createElement("textarea"); 
+            txt.innerHTML = str; 
+            return txt.value; 
+        }
+
+        function encodePuny(str) {
+            return str.split(/(\s+)/).map(word => {
+                if(!word.trim() || /^[\x00-\x7F]+$/.test(word)) return word;
+                try { return new URL('http://' + word).hostname; } catch(e) { return word; }
+            }).join('');
+        }
+
+        function updateFrom(source) {
+            let el = els[source];
+            let originalVal = el.value;
+            let sanitizedVal = originalVal;
+
+            if (source === 'dec') sanitizedVal = sanitizedVal.replace(/[^0-9\s]/g, '');
+            else if (source === 'bin') sanitizedVal = sanitizedVal.replace(/[^01\s]/g, '');
+            else if (source === 'oct') sanitizedVal = sanitizedVal.replace(/[^0-7\s]/g, '');
+            else if (source === 'hex') sanitizedVal = sanitizedVal.replace(/[^0-9a-fA-F\s]/g, '');
+            else if (source === 'uni') sanitizedVal = sanitizedVal.replace(/[^0-9a-fA-FuU\+\s]/g, '');
+            else if (source === 'b64') sanitizedVal = sanitizedVal.replace(/[^a-zA-Z0-9\+\/\=\n]/g, '');
+            else if (source === 'b32') sanitizedVal = sanitizedVal.toUpperCase().replace(/[^A-Z2-7=\n\s]/g, '');
+            else if (source === 'b58') sanitizedVal = sanitizedVal.replace(/[^1-9A-HJ-NP-Za-km-z\n\s]/g, '');
+            else if (source === 'morse') sanitizedVal = sanitizedVal.replace(/[^\.\-\s\/]/g, '');
+
+            Object.values(groups).forEach(g => g.classList.remove('error-state'));
+
+            if (sanitizedVal !== originalVal) {
+                groups[source].classList.add('error-state');
+                if (source !== 'text') {
+                    let pos = el.selectionStart;
+                    el.value = sanitizedVal;
+                    if (pos > 0) el.setSelectionRange(pos - 1, pos - 1);
+                }
+            }
+
+            let val = el.value;
+            let textStr = "";
+
+            if (!val.trim() && source !== 'text') {
+                Object.values(els).forEach(e => { e.value = ""; autoResize(e); });
+                return;
+            } else if (!els.text.value && source === 'text') {
+                 Object.values(els).forEach(e => { e.value = ""; autoResize(e); });
+                 return;
+            }
+
+            try {
+                if (source === 'text') { textStr = val; } 
+                else if (source === 'dec') { textStr = val.trim().split(/\s+/).filter(n => n !== "").map(n => String.fromCharCode(parseInt(n, 10))).join(''); } 
+                else if (source === 'bin') { textStr = val.trim().split(/\s+/).filter(n => n !== "").map(n => String.fromCharCode(parseInt(n, 2))).join(''); } 
+                else if (source === 'oct') { textStr = val.trim().split(/\s+/).filter(n => n !== "").map(n => String.fromCharCode(parseInt(n, 8))).join(''); } 
+                else if (source === 'hex') { textStr = val.trim().split(/\s+/).filter(n => n !== "").map(n => String.fromCharCode(parseInt(n, 16))).join(''); } 
+                else if (source === 'uni') {
+                    textStr = val.trim().split(/\s+/).filter(n => n !== "").map(n => {
+                        let cleanHex = n.replace(/^U\+/i, '');
+                        return cleanHex ? String.fromCodePoint(parseInt(cleanHex, 16)) : "";
+                    }).join('');
+                } 
+                else if (source === 'b64') {
+                    let binString = atob(val.trim());
+                    let bytes = new Uint8Array(binString.length);
+                    for (let i = 0; i < binString.length; i++) bytes[i] = binString.charCodeAt(i);
+                    textStr = new TextDecoder().decode(bytes);
+                }
+                else if (source === 'url') { textStr = decodeURIComponent(val); }
+                else if (source === 'html') { textStr = decodeHtml(val); }
+                else if (source === 'r13') { textStr = rot13(val); }
+                else if (source === 'b32') { textStr = decodeBase32(val); }
+                else if (source === 'b58') { textStr = decodeBase58(val); }
+                else if (source === 'morse') { textStr = decodeMorse(val); }
+                else if (source === 'puny') { textStr = val; } 
+
+                if (source !== 'text') els.text.value = textStr;
+                
+                let utf16Codes = [], unicodePoints = [];
+                for (let i = 0; i < textStr.length; i++) utf16Codes.push(textStr.charCodeAt(i));
+                for (let char of textStr) unicodePoints.push(char.codePointAt(0));
+
+                if (source !== 'dec') els.dec.value = utf16Codes.map(c => c.toString(10)).join(' ');
+                if (source !== 'bin') els.bin.value = utf16Codes.map(c => c.toString(2).padStart(8, '0')).join(' ');
+                if (source !== 'oct') els.oct.value = utf16Codes.map(c => c.toString(8)).join(' ');
+                if (source !== 'hex') els.hex.value = utf16Codes.map(c => c.toString(16).toUpperCase()).join(' ');
+                if (source !== 'uni') els.uni.value = unicodePoints.map(c => 'U+' + c.toString(16).toUpperCase()).join(' ');
+                if (source !== 'url') els.url.value = encodeURIComponent(textStr);
+                if (source !== 'html') els.html.value = encodeHtml(textStr);
+                if (source !== 'r13') els.r13.value = rot13(textStr);
+                if (source !== 'b32') els.b32.value = encodeBase32(textStr);
+                if (source !== 'b58') els.b58.value = encodeBase58(textStr);
+                if (source !== 'puny') els.puny.value = encodePuny(textStr);
+                
+                if (source !== 'morse') {
+                    let norm = textStr.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+                    let safe = norm.replace(/[^A-Z0-9 \.\/]/g, '');
+                    if (safe.length !== norm.length && textStr !== "") groups.morse.classList.add('error-state');
+                    els.morse.value = safe.split('').map(c => morseMap[c] || c).join(' ');
+                }
+
+                if (source !== 'b64') {
+                    let bytes = new TextEncoder().encode(textStr);
+                    let binString = String.fromCharCode(...bytes);
+                    els.b64.value = btoa(binString);
+                }
+
+                Object.values(els).forEach(e => autoResize(e));
+
+            } catch (e) {
+                groups[source].classList.add('error-state');
+            }
+        }
+
+        function resetFields() {
+            Object.values(els).forEach(el => { el.value = ""; autoResize(el); });
+            Object.values(groups).forEach(g => g.classList.remove('error-state'));
+            els.text.focus();
+        }
+
+        function copyToClipboard(id) {
+            const el = document.getElementById(id);
+            if (!el.value) return;
+            navigator.clipboard.writeText(el.value).then(() => {
+                const group = document.getElementById(id.replace('val-', 'group-'));
+                let originalBorder = group.style.borderColor;
+                group.style.borderColor = "#3b82f6";
+                group.style.boxShadow = "0 0 0 2px rgba(59, 130, 246, 0.5)";
+                setTimeout(() => {
+                    group.style.borderColor = originalBorder;
+                    group.style.boxShadow = "none";
+                }, 300);
+            });
+        }
+
+        window.onload = () => {
+            renderInputs();
+            initLanguage();
+            document.title = i18n[currentLang].title;
+        };
+    </script>
+</body>
+</html>
